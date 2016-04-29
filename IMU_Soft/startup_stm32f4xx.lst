@@ -850,11 +850,11 @@ ARM Macro Assembler    Page 14
 
 
 erwork --depend=.\debug\startup_stm32f4xx.d -o.\debug\startup_stm32f4xx.o -IC:\
-Users\Kapil\Desktop\IMUcode\IMU_Soft\RTE -IC:\Keil_v5\ARM\PACK\Keil\STM32F4xx_D
-FP\2.7.0\Drivers\CMSIS\Device\ST\STM32F4xx\Include -IC:\Keil_v5\ARM\CMSIS\Inclu
-de --predefine="__MICROLIB SETA 1" --predefine="__UVISION_VERSION SETA 518" --p
-redefine="STM32F407xx SETA 1" --list=.\startup_stm32f4xx.lst Source\startup_stm
-32f4xx.s
+Users\Kapil\Desktop\gitHub\IMUcode\IMU_Soft\RTE -IC:\Keil_v5\ARM\PACK\Keil\STM3
+2F4xx_DFP\2.7.0\Drivers\CMSIS\Device\ST\STM32F4xx\Include -IC:\Keil_v5\ARM\CMSI
+S\Include --predefine="__MICROLIB SETA 1" --predefine="__UVISION_VERSION SETA 5
+18" --predefine="STM32F407xx SETA 1" --list=.\startup_stm32f4xx.lst Source\star
+tup_stm32f4xx.s
 
 
 

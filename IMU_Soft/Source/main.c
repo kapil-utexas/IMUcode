@@ -67,6 +67,7 @@ void loop(void)
 	ADXL345_Read_XYZt();
   //Get HMC5883L data
 	HMC5883L_Read_XYZt();
+	evaluate_rotation_matrix_imu();
 	delay_ms(50);
 	// sprintf((char *)AddSDstr,"\r\nG_X=%5d,G_Y=%5d,G_Z=%5d, Temp=%d  \r\n\
 			A_X=%.4f,A_Y=%.4f,MAG=%.4f\r\n",ITG3205_X,ITG3205_Y,ITG3205_Z,ITG3205_T\

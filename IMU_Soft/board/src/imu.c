@@ -14,7 +14,7 @@ int16_t  HMC5883L_X,HMC5883L_Y,HMC5883L_Z;
 float ADXL345_X_AXIS,ADXL345_Y_AXIS,ADXL345_Z_AXIS;
 float conver_x,conver_y,conver_z;
 float HMC5883L_ARC;
-
+float normal_mat[3];
 /////////////////////////  ITG3205
 //初始化ITG3205  ITG3205 Initialize
 void Init_ITG3205(void)
@@ -124,9 +124,9 @@ void ADXL345_Read_XYZt(void)
   //获取ADXL345 angle  ADXL345 angle
 	//printf("#%d$%d$%d$",ADXL345_X,ADXL345_Y,ADXL345_Z);
 	
-	//printf("Ax:%f,Ay:%f,Az:%f\r\n",conver_x,conver_y,conver_z);
-  ADXL345_X_AXIS=(float)(((atan2(conver_z,conver_x)*180)/3.14159265)+180);    //X轴角度值
-  ADXL345_Y_AXIS=(float)(((atan2(conver_z,conver_y)*180)/3.14159265)+180);  //Y轴角度值
+	//printf("Ax:%f,Ay:%f,Az:%f\r\n",conver_x,conver_y,conver_z);//Actual Accel VAlues
+ // ADXL345_X_AXIS=(float)(((atan2(conver_z,conver_x)*180)/3.14159265)+180);    //X轴角度值
+  //ADXL345_Y_AXIS=(float)(((atan2(conver_z,conver_y)*180)/3.14159265)+180);  //Y轴角度值
 //  printf("ADXL345_X_AXIS:%f,ADXL345_Y_AXIS:%f\r\n ",ADXL345_X_AXIS,ADXL345_Y_AXIS);
 }	
 
@@ -166,7 +166,7 @@ void HMC5883L_Read_XYZt(void)
 	data_h = Read_single_reg(HMC5883L_Addr,HMC5883L_ZH);
 //	printf("HMC5883L_ZL:%d ,HMC5883L_ZL:%d \r\n ",data_l,data_h);
 	HMC5883L_Z = (data_h<<8)|data_l;
-	printf("Hx:%d,Hy:%d,Hz:%d\r\n ",HMC5883L_X,HMC5883L_Y,HMC5883L_Z);  
+	//printf("Hx:%d,Hy:%d,Hz:%d\r\n ",HMC5883L_X,HMC5883L_Y,HMC5883L_Z);  
   
 	//if(HMC5883L_X>0x7fff) HMC5883L_X-=0xffff;	
 	//if(HMC5883L_Y>0x7fff) HMC5883L_Y-=0xffff;	
@@ -179,7 +179,7 @@ void HMC5883L_Read_XYZt(void)
 		
 	if(HMC5883L_ARC > 360)
 		HMC5883L_ARC -= 360 ;
-	printf("Heading:%f\r\n ",HMC5883L_ARC);
+	//printf("Heading:%f\r\n ",HMC5883L_ARC);
 	//delay_ms();
 	
 }
@@ -232,11 +232,13 @@ void IMU_INIT(uint8_t imu_ic)
 the gyro component is calculated just as a cross product of the mag and acc data
 
 */
-/*float Ri[3][3];
+float Ri[3][3];
 void evaluate_rotation_matrix_imu(void){
-	float gx = HMC5883L_X * ADXL345_X_AXIS *sin( (float)(atan2(ADXL345_X,HMC5883L_X)) );
-	float gy = HMC5883L_Y * ADXL345_Y_AXIS *sin( (float)(atan2(ADXL345_Y,HMC5883L_Y)) );
-	float gz = HMC5883L_Z * ADXL345_Z_AXIS *sin( (float)(atan2(ADXL345_Z,HMC5883L_Z)) );
+	
+	normalize(conver_x,conver_y,conver_z);
+	float gx = HMC5883L_X * conver_x *sin( (float)(atan2(conver_x,HMC5883L_X)) );//atan2(y/x)
+	float gy = HMC5883L_Y * conver_y *sin( (float)(atan2(conver_y,HMC5883L_Y)) );
+	float gz = HMC5883L_Z * conver_z *sin( (float)(atan2(conver_z,HMC5883L_Z)) );
 	
 	Ri[0][0] = HMC5883L_X;
 	Ri[1][0] = HMC5883L_Y;
@@ -246,8 +248,26 @@ void evaluate_rotation_matrix_imu(void){
 	Ri[1][1] = gy;
 	Ri[2][1] = gz;
 	
-	Ri[0][2] = ADXL345_X_AXIS;
-	Ri[1][2] = ADXL345_Y_AXIS;
-	Ri[2][2] = ADXL345_Z_AXIS;
-}*/
+	Ri[0][2] = conver_x;
+	Ri[1][2] = conver_y;
+	Ri[2][2] = conver_z;
+	
+	printf("DCM Matrix\r\n ");
+	printf("%f, %f, %f\r\n",Ri[0][0],Ri[0][1],Ri[0][2]);
+	//delay_ms(50);
+	printf("%f, %f, %f\r\n",Ri[1][0],Ri[1][1],Ri[1][2]);
+	printf("%f, %f, %f\r\n",Ri[2][0],Ri[2][1],Ri[2][2]);
+}
+
+void normalize(float vec_x,float vec_y,float vec_z){
+	//float normal[3];
+	float vec_mag;
+	
+	vec_mag = pow( (pow(vec_x,2)+pow(vec_y,2)+pow(vec_z,2)) , 0.5);
+	normal_mat[0] = normal_mat[0]/vec_mag;
+	normal_mat[1] = normal_mat[1]/vec_mag;
+	normal_mat[2] = normal_mat[2]/vec_mag;
+		
+}
+
 
