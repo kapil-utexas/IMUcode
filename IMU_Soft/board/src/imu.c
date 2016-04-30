@@ -15,6 +15,9 @@ float ADXL345_X_AXIS,ADXL345_Y_AXIS,ADXL345_Z_AXIS;
 float conver_x,conver_y,conver_z;
 float HMC5883L_ARC;
 float normal_mat[3];
+float scal_prod;
+float vec_prod[3];
+
 /////////////////////////  ITG3205
 //初始化ITG3205  ITG3205 Initialize
 void Init_ITG3205(void)
@@ -168,8 +171,9 @@ void HMC5883L_Read_XYZt(void)
 	HMC5883L_Z = (data_h<<8)|data_l;
 	//printf("Hx:%d,Hy:%d,Hz:%d\r\n ",HMC5883L_X,HMC5883L_Y,HMC5883L_Z);  
   
-	//if(HMC5883L_X>0x7fff) HMC5883L_X-=0xffff;	
-	//if(HMC5883L_Y>0x7fff) HMC5883L_Y-=0xffff;	
+	if(HMC5883L_X>0x7fff) HMC5883L_X-=0xffff;	
+	if(HMC5883L_Y>0x7fff) HMC5883L_Y-=0xffff;
+	if(HMC5883L_Z>0x7fff) HMC5883L_Z-=0xffff;	
 	//HMC5883L获取的角度值  HMC5883L Angle value
 	
   HMC5883L_ARC=atan2(HMC5883L_Y,HMC5883L_X)*(180/3.14159265);    //Heading in degrees
@@ -232,42 +236,97 @@ void IMU_INIT(uint8_t imu_ic)
 the gyro component is calculated just as a cross product of the mag and acc data
 
 */
-float Ri[3][3];
+//float Ri[3][3];
 void evaluate_rotation_matrix_imu(void){
+	float ax,ay,az,hx,hy,hz,kx,ky,kz,temp_x,temp_y,temp_z, temp_hx,temp_hy,temp_hz;
+	//accelerometer vector
 	
-	normalize(conver_x,conver_y,conver_z);
-	float gx = HMC5883L_X * conver_x *sin( (float)(atan2(conver_x,HMC5883L_X)) );//atan2(y/x)
-	float gy = HMC5883L_Y * conver_y *sin( (float)(atan2(conver_y,HMC5883L_Y)) );
-	float gz = HMC5883L_Z * conver_z *sin( (float)(atan2(conver_z,HMC5883L_Z)) );
+	normalize(conver_x/1000,conver_y/1000,conver_z/1000);
+	 ax = normal_mat[0];
+	 ay = normal_mat[1];
+	 az = normal_mat[2];
+
+	//magnetometer vector
+	temp_hx = (float)(HMC5883L_X ) / 1000;
+	temp_hy = (float)(HMC5883L_Y ) /1000;
+	temp_hz = (float)(HMC5883L_Z ) /1000;
+	//printf("BEFORE %f, %f, %f\r\n",temp_hx,temp_hy,temp_hz);
+
+	scalar_product(conver_x/1000,conver_y/1000,conver_z/1000,temp_hx,temp_hy,temp_hz);
+	//printf("SCALAR PRODUCT %f\r\n",scal_prod);	
+	temp_x = scal_prod * conver_x/1000;
+	 temp_y = scal_prod * conver_y/1000;
+	 temp_z = scal_prod * conver_z/1000;
+	//printf("TEMP %f, %f, %f\r\n",temp_x,temp_y,temp_z);
 	
-	Ri[0][0] = HMC5883L_X;
-	Ri[1][0] = HMC5883L_Y;
-	Ri[2][0] = HMC5883L_Z;
+	hx = temp_hx - temp_x;
+	 hy = temp_hy - temp_y;
+	 hz = temp_hz - temp_z;
+	//printf("AFTER %f, %f, %f\r\n",hx,hy,hz);
 	
-	Ri[0][1] = gx;
-	Ri[1][1] = gy;
-	Ri[2][1] = gz;
+	normalize(hx,hy,hz);
+	hx = normal_mat[0];
+	hy = normal_mat[1];
+	hz = normal_mat[2];
+	//printf("AFTER NORMALIZE %f, %f, %f\r\n",hx,hy,hz);
 	
-	Ri[0][2] = conver_x;
-	Ri[1][2] = conver_y;
-	Ri[2][2] = conver_z;
+	// vector perpendicular to both h and a vector
+	vector_product(hx,hy,hz,ax,ay,az);
+	 kx = vec_prod[0];
+	 ky = vec_prod[1];
+	 kz = vec_prod[2];
 	
+	normalize(kx,ky,kz);
+	kx=normal_mat[0];
+	ky=normal_mat[1];
+	kz=normal_mat[2];
+/*	
+	Ri[0][0] = hx;
+	Ri[1][0] = hy;
+	Ri[2][0] = hz;
+	
+	Ri[0][1] = kx;
+	Ri[1][1] = ky;
+	Ri[2][1] = kz;
+	
+	Ri[0][2] = ax;
+	Ri[1][2] = ay;
+	Ri[2][2] = az;
+	*/
 	printf("DCM Matrix\r\n ");
-	printf("%f, %f, %f\r\n",Ri[0][0],Ri[0][1],Ri[0][2]);
-	//delay_ms(50);
-	printf("%f, %f, %f\r\n",Ri[1][0],Ri[1][1],Ri[1][2]);
-	printf("%f, %f, %f\r\n",Ri[2][0],Ri[2][1],Ri[2][2]);
+//	printf("%f, %f, %f\r\n",Ri[0][0],Ri[0][1],Ri[0][2]);
+//	printf("%f, %f, %f\r\n",Ri[1][0],Ri[1][1],Ri[1][2]);
+//	printf("%f, %f, %f\r\n",Ri[2][0],Ri[2][1],Ri[2][2]);
+	printf("%f, %f, %f\r\n",hx,kx,ax);
+	printf("%f, %f, %f\r\n",hy,ky,ay);
+	printf("%f, %f, %f\r\n",hz,kz,az);
+
 }
 
 void normalize(float vec_x,float vec_y,float vec_z){
 	//float normal[3];
 	float vec_mag;
 	
-	vec_mag = pow( (pow(vec_x,2)+pow(vec_y,2)+pow(vec_z,2)) , 0.5);
-	normal_mat[0] = normal_mat[0]/vec_mag;
-	normal_mat[1] = normal_mat[1]/vec_mag;
-	normal_mat[2] = normal_mat[2]/vec_mag;
-		
+	vec_mag = sqrt( pow(vec_x,2)+pow(vec_y,2)+pow(vec_z,2));
+	//printf("VECMAG:%f\r\n ",vec_mag);
+	normal_mat[0] = vec_x/vec_mag;
+	normal_mat[1] = vec_y/vec_mag;
+	normal_mat[2] = vec_z/vec_mag;
+	//printf("Normalize\r\n ");
+	//printf("%f, %f, %f, %f\r\n",vec_mag,normal_mat[0],normal_mat[1],normal_mat[2]);
+
 }
+
+void scalar_product(float vec_x1,float vec_y1,float vec_z1,float vec_x2,float vec_y2,float vec_z2){
+	scal_prod = vec_x1*vec_x2 + vec_y1*vec_y2 + vec_z1*vec_z2;
+}
+
+void vector_product(float vec_x1,float vec_y1,float vec_z1,float vec_x2,float vec_y2,float vec_z2){
+	vec_prod[0] = vec_y1*vec_z2 - vec_z1*vec_y2;
+	vec_prod[1] = -vec_x1*vec_z2 + vec_z1*vec_x2;
+	vec_prod[2] = vec_x1*vec_y2 - vec_y1*vec_x2;
+//	printf("%f, %f, %f\r\n",vec_prod[0],vec_prod[1],vec_prod[2]);
+}
+
 
 

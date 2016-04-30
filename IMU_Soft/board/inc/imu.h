@@ -97,6 +97,8 @@ void HMC5883L_Read_XYZt(void);
 void IMU_EvaluateRotationMatrix(float32_t,float32_t,float32_t);
 void normalize(float vec_x,float vec_y,float vec_z);
 void evaluate_rotation_matrix_imu(void);
+void scalar_product(float vec_x1,float vec_y1,float vec_z1,float vec_x2,float vec_y2,float vec_z2);
+void vector_product(float vec_x1,float vec_y1,float vec_z1,float vec_x2,float vec_y2,float vec_z2);
 
 #endif 
 
