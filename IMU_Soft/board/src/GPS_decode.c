@@ -28,7 +28,7 @@ GPS frame format: $aaccc,ddd,ddd,…,ddd*hh<CR><LF>
 
 
 /* DMA接收缓冲   DMA receive buffer*/
-uint8_t gps_recv_buff[GPS_RBUFF_SIZE];
+char gps_recv_buff[GPS_RBUFF_SIZE];
 /* DMA传输结束标志   End of the DMA transfers*/
 __IO uint8_t GPS_TransferEnd = 0, GPS_HalfTransferEnd = 0;
 /*暂存逗号之间的数据方便转换    Comma between data storage. The convenient conversion */
@@ -368,7 +368,8 @@ double nmea_atof(const char *buffer,uint8_t recv_len)
  */
 void GET_NMEA_TIME(const char *recv_time,uint8_t time_buff_len,nmeaTIME *time,uint8_t time_type)
 {
-	uint8_t i,temp[6];
+	uint8_t i;
+	char temp[6];
 	if(time_buff_len>=6){
     if(time_type==TIME_TYPE_HHMMSS){
 		  time->hour= (recv_time[0] - '0')*10 + (recv_time[1] - '0');//时
@@ -757,7 +758,7 @@ uint8_t NMEA0183_protocol_analysis(char *gps_buffer,uint16_t total_size,nmeaINFO
 				switch(parser.parse_type){
 					case GPGGA:
             //串口2打印数据(蓝牙)						
-						USART_Write_LEN(parser.buffer,parser.buffer_size,2);
+						USART_Write_LEN((u8 *)parser.buffer,parser.buffer_size,2);
 					  printf("\r\n");
 					  //解析数据
 						NMEA_Parse_GPGGA(parser.buffer,parser.buffer_size,&nmea_gga);
@@ -769,7 +770,7 @@ uint8_t NMEA0183_protocol_analysis(char *gps_buffer,uint16_t total_size,nmeaINFO
 					
 					case GPGSA:	
 						//串口2打印数据(蓝牙)						
-						USART_Write_LEN(parser.buffer,parser.buffer_size,2);
+						USART_Write_LEN((u8 *)parser.buffer,parser.buffer_size,2);
 					  printf("\r\n");
 					  //解析数据
   				  NMEA_Parse_GPGSA(parser.buffer,parser.buffer_size,&nmea_gsa);
@@ -780,7 +781,7 @@ uint8_t NMEA0183_protocol_analysis(char *gps_buffer,uint16_t total_size,nmeaINFO
 					
           case GPGSV:	
 						//串口2打印数据(蓝牙)						
-						USART_Write_LEN(parser.buffer,parser.buffer_size,2);
+						USART_Write_LEN((u8 *)parser.buffer,parser.buffer_size,2);
 					  printf("\r\n");
 					  //解析数据						
 						NMEA_Parse_GPGSV(parser.buffer,parser.buffer_size,&nmea_gsv);
@@ -788,7 +789,7 @@ uint8_t NMEA0183_protocol_analysis(char *gps_buffer,uint16_t total_size,nmeaINFO
 					
 					case GPRMC:	
 						//串口2打印数据(蓝牙)						
-						USART_Write_LEN(parser.buffer,parser.buffer_size,2);
+						USART_Write_LEN((u8 *)parser.buffer,parser.buffer_size,2);
 					  printf("\r\n");
 					  //解析数据
   					NMEA_Parse_GPRMC(parser.buffer,parser.buffer_size,&nmea_rmc);
@@ -799,7 +800,7 @@ uint8_t NMEA0183_protocol_analysis(char *gps_buffer,uint16_t total_size,nmeaINFO
 					
 					case GPVTG:
 						//串口2打印数据(蓝牙)						
-						USART_Write_LEN(parser.buffer,parser.buffer_size,2);
+						USART_Write_LEN((u8 *)(parser.buffer),parser.buffer_size,2);
 					  printf("\r\n");
 					  //解析数据
    					NMEA_Parse_GPVTG(parser.buffer,parser.buffer_size,&nmea_vtg);
@@ -807,7 +808,7 @@ uint8_t NMEA0183_protocol_analysis(char *gps_buffer,uint16_t total_size,nmeaINFO
 					
 					case GPGLL:
   					//串口2打印数据(蓝牙)						
-						USART_Write_LEN(parser.buffer,parser.buffer_size,2);
+						USART_Write_LEN((u8 *)parser.buffer,parser.buffer_size,2);
 					  printf("\r\n");
 					  //解析数据	
 						NMEA_Parse_GPGLL(parser.buffer,parser.buffer_size,&nmea_gll);
@@ -831,16 +832,19 @@ uint8_t NMEA0183_protocol_analysis(char *gps_buffer,uint16_t total_size,nmeaINFO
 //GPS数据解析 提取GPS有用数据
 void GPS_Parse_Decode(void)
 {	
-	//The DMA to receive all completed
+		//The DMA to receive all completed
   if(GPS_TransferEnd){		
 		//Use a serial port 3 print receiving data
 //	   USART_Write_LEN(gps_recv_buff,GPS_RBUFF_SIZE,3);
 		// NMEA0183 protocol analysis
 		 if(NMEA0183_protocol_analysis(gps_recv_buff,GPS_RBUFF_SIZE,&info)){
 			 
-			 printf("Time:%d-%d-%d %d:%d:%d",info.utc.year,info.utc.mon,info.utc.day,info.utc.hour,info.utc.min,info.utc.sec);
-			 printf("info.lon:%f,info.lat:%f,info.HDOP:%f\r\n ",info.lon,info.lat,info.HDOP); 
-			 printf("info.speed:%f,info.direction:%f,info.declination:%f\r\n ",info.speed,info.direction,info.declination);
+			 printf("\r\nTime:%d-%d-%d %d:%d:%d",info.utc.year,info.utc.mon,info.utc.day,info.utc.hour,info.utc.min,info.utc.sec);
+			// printf("lon = %f, lat = %f,info.HDOP:%f\r\n ",info.lon,info.lat,info.HDOP);
+			 printf("lon = %f, lat = %f \r\n ",info.lon,info.lat); 
+		
+
+			 //printf("info.speed:%f,info.direction:%f,info.declination:%f\r\n ",info.speed,info.direction,info.declination);
 		 }
 	   GPS_TransferEnd = 0x00;
 	}
@@ -850,10 +854,11 @@ void GPS_Parse_Decode(void)
 //	   USART_Write_LEN(gps_recv_buff,HALF_GPS_RBUFF_SIZE,3);
 		 // NMEA0183 protocol analysis
 		 if(NMEA0183_protocol_analysis(gps_recv_buff,HALF_GPS_RBUFF_SIZE,&info)){		
-			 
-		   printf("Time:%d-%d-%d %d:%d:%d",info.utc.year,info.utc.mon,info.utc.day,info.utc.hour,info.utc.min,info.utc.sec);
-			 printf("info.lon:%f,info.lat:%f,info.HDOP:%f\r\n ",info.lon,info.lat,info.HDOP); 
-			 printf("info.speed:%f,info.direction:%f,info.declination:%f\r\n ",info.speed,info.direction,info.declination); 
+//		   printf("Time:%d-%d-%d %d:%d:%d",info.utc.year,info.utc.mon,info.utc.day,info.utc.hour,info.utc.min,info.utc.sec);
+//			 printf("info.lon:%f,info.lat:%f,info.HDOP:%f\r\n ",info.lon,info.lat,info.HDOP); 
+//			 printf("info.speed:%f,info.direction:%f,info.declination:%f\r\n ",info.speed,info.direction,info.declination); 
+			 printf("lon = %f, lat = %f \r\n ",info.lon,info.lat);
+ 	
 		 }
 	   GPS_HalfTransferEnd = 0x00;
 	}

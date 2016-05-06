@@ -99,7 +99,10 @@ void normalize(float vec_x,float vec_y,float vec_z);
 void evaluate_rotation_matrix_imu(void);
 void scalar_product(float vec_x1,float vec_y1,float vec_z1,float vec_x2,float vec_y2,float vec_z2);
 void vector_product(float vec_x1,float vec_y1,float vec_z1,float vec_x2,float vec_y2,float vec_z2);
-
+void matrix_multiply(float input1[3][3],float input2[3][3]);
+void linear_filter();
+void scalar_multiply(float input[3][3] ,float lambda);
+void calculate_p_r_y();
 #endif 
 
 

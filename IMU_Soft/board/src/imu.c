@@ -8,6 +8,11 @@
 **HMC5883L: 3-Axis Digital Compass IC
 */
 //
+#define ACC_FREQUENCY 12.5 //12.5hz
+#define ACC_SAMPLE_TIME 0.08 //.08 sec
+#define LAMBDA 0.9
+#define RADIANS_2_DEGREE 180/3.14159265
+
 short  ITG3205_X,ITG3205_Y,ITG3205_Z,ITG3205_T;
 int16_t  ADXL345_X,ADXL345_Y,ADXL345_Z;
 int16_t  HMC5883L_X,HMC5883L_Y,HMC5883L_Z;
@@ -17,7 +22,16 @@ float HMC5883L_ARC;
 float normal_mat[3];
 float scal_prod;
 float vec_prod[3];
+float Ri[3][3];
+float Rg[3][3];
+float outMat[3][3];
+float outMat2[3][3];
+float outMat3[3][3];
+uint8_t initialize = 0;
+float pitch,roll,yaw,temp;
 
+float Ra_g[3][3];
+float preRa_g[3][3];
 /////////////////////////  ITG3205
 //初始化ITG3205  ITG3205 Initialize
 void Init_ITG3205(void)
@@ -64,7 +78,9 @@ void READ_ITG3205_XYZT(void)
 	ITG3205_T = (data_h<<8)|data_l;
 	ITG3205_T =35+((double)ITG3205_T+13200)/280;
 	if(ITG3205_T<0)  ITG3205_T = -ITG3205_T;
-	//printf("Gx:%d,Gy:%d,Gz:%d\r\n ",ITG3205_X,ITG3205_Y,ITG3205_Z);
+	temp = sqrt( pow(ITG3205_X,2)+pow(ITG3205_Y,2)+pow(ITG3205_Z,2));
+
+printf("Gx:%d,Gy:%d,Gz:%d, Norm:%f\r\n ",ITG3205_X,ITG3205_Y,ITG3205_Z,temp);
 	 	
 }
 //////////////////////////// end ITG3205
@@ -86,6 +102,7 @@ void Init_ADXL345(void)
 void ADXL345_Read_XYZt(void)
 {
   uint8_t  data_l,data_h;
+	float temp;
 	//ADXL345 slave address
   data_l = Read_single_reg(ADXL345_Addr,ADXL345_ID);
 //	printf("ADXL345_Addr:%d\r\n ",data_l);
@@ -127,8 +144,11 @@ void ADXL345_Read_XYZt(void)
   //获取ADXL345 angle  ADXL345 angle
 	//printf("#%d$%d$%d$",ADXL345_X,ADXL345_Y,ADXL345_Z);
 	
-	//printf("Ax:%f,Ay:%f,Az:%f\r\n",conver_x,conver_y,conver_z);//Actual Accel VAlues
- // ADXL345_X_AXIS=(float)(((atan2(conver_z,conver_x)*180)/3.14159265)+180);    //X轴角度值
+
+
+temp = sqrt( pow(conver_x,2)+pow(conver_y,2)+pow(conver_z,2));
+	printf("Ax:%f,Ay:%f,Az:%f,Norm:%f\r\n",conver_x,conver_y,conver_z,temp);//Actual Accel VAlues
+// ADXL345_X_AXIS=(float)(((atan2(conver_z,conver_x)*180)/3.14159265)+180);    //X轴角度值
   //ADXL345_Y_AXIS=(float)(((atan2(conver_z,conver_y)*180)/3.14159265)+180);  //Y轴角度值
 //  printf("ADXL345_X_AXIS:%f,ADXL345_Y_AXIS:%f\r\n ",ADXL345_X_AXIS,ADXL345_Y_AXIS);
 }	
@@ -239,6 +259,7 @@ the gyro component is calculated just as a cross product of the mag and acc data
 //float Ri[3][3];
 void evaluate_rotation_matrix_imu(void){
 	float ax,ay,az,hx,hy,hz,kx,ky,kz,temp_x,temp_y,temp_z, temp_hx,temp_hy,temp_hz;
+	int i,j;
 	//accelerometer vector
 	
 	normalize(conver_x/1000,conver_y/1000,conver_z/1000);
@@ -280,7 +301,7 @@ void evaluate_rotation_matrix_imu(void){
 	kx=normal_mat[0];
 	ky=normal_mat[1];
 	kz=normal_mat[2];
-/*	
+	
 	Ri[0][0] = hx;
 	Ri[1][0] = hy;
 	Ri[2][0] = hz;
@@ -292,14 +313,35 @@ void evaluate_rotation_matrix_imu(void){
 	Ri[0][2] = ax;
 	Ri[1][2] = ay;
 	Ri[2][2] = az;
-	*/
-	printf("DCM Matrix\r\n ");
-//	printf("%f, %f, %f\r\n",Ri[0][0],Ri[0][1],Ri[0][2]);
-//	printf("%f, %f, %f\r\n",Ri[1][0],Ri[1][1],Ri[1][2]);
-//	printf("%f, %f, %f\r\n",Ri[2][0],Ri[2][1],Ri[2][2]);
-	printf("%f, %f, %f\r\n",hx,kx,ax);
-	printf("%f, %f, %f\r\n",hy,ky,ay);
-	printf("%f, %f, %f\r\n",hz,kz,az);
+
+//calculate RM for gyro or Rg
+	Rg[0][0] = 1;
+	Rg[1][0] = az*ACC_SAMPLE_TIME;
+	Rg[2][0] = -1*ay*ACC_SAMPLE_TIME;
+	
+	Rg[0][1] = -1*az*ACC_SAMPLE_TIME;
+	Rg[1][1] = 1;
+	Rg[2][1] = ax*ACC_SAMPLE_TIME;
+	
+	Rg[0][2] = ay*ACC_SAMPLE_TIME;
+	Rg[1][2] = -1*ax*ACC_SAMPLE_TIME;
+	Rg[2][2] = 1;
+	
+	
+//		if(initialize ==0 )	
+//		{
+//			for (i=0;i<3;i++)
+//        for(j=0;j<3;j++)
+//					preRa_g[i][j] = Ri[i][j] ;
+//			initialize = 1;
+//		}
+//	printf("DCM Gyro Matrix\r\n ");
+//	printf("%f, %f, %f\r\n",Rg[0][0],Rg[0][1],Rg[0][2]);
+//	printf("%f, %f, %f\r\n",Rg[1][0],Rg[1][1],Rg[1][2]);
+//	printf("%f, %f, %f\r\n",Rg[2][0],Rg[2][1],Rg[2][2]);
+//	printf("%f, %f, %f\r\n",hx,kx,ax);
+//	printf("%f, %f, %f\r\n",hy,ky,ay);
+//	printf("%f, %f, %f\r\n",hz,kz,az);
 
 }
 
@@ -327,6 +369,96 @@ void vector_product(float vec_x1,float vec_y1,float vec_z1,float vec_x2,float ve
 	vec_prod[2] = vec_x1*vec_y2 - vec_y1*vec_x2;
 //	printf("%f, %f, %f\r\n",vec_prod[0],vec_prod[1],vec_prod[2]);
 }
+
+//Linear Filter
+void linear_filter(){
+	int i,j;
+	float temp[3][3];
+	//float in1[3][3] = {{1,1,1},{1,1,1},{1,1,1}};
+	//float in2[3][3] = {{1,1,1},{1,1,1},{1,1,1}};
+	matrix_multiply(preRa_g,Rg); //answer in outMat2
+//	for (i=0;i<3;i++){
+//        for(j=0;j<3;j++){
+//					temp[i][j] = outMat2[i][j];
+//          //printf("%f\r\n",outMat[i][j]);
+//        } 
+//    }
+
+	scalar_multiply(temp,LAMBDA);//answer is in outMat
+	for (i=0;i<3;i++){
+        for(j=0;j<3;j++){
+					temp[i][j] = outMat[i][j];
+          //printf("%f\r\n",outMat[i][j]);
+        } 
+    }
+
+	scalar_multiply(Ri,1-LAMBDA);
+    for (i=0;i<3;i++){
+        for(j=0;j<3;j++){
+					//preRa_g[i][j] = Ra_g[i][j];
+					Ra_g[i][j] = temp[i][j] + outMat[i][j];
+					preRa_g[i][j] = Ra_g[i][j];
+					
+			}
+		}
+//			printf("DCM after filter\r\n ");
+//	printf("%f, %f, %f\r\n",Ra_g[0][0],Ra_g[0][1],Ra_g[0][2]);
+//	printf("%f, %f, %f\r\n",Ra_g[1][0],Ra_g[1][1],Ra_g[1][2]);
+//	printf("%f, %f, %f\r\n",Ra_g[2][0],Ra_g[2][1],Ra_g[2][2]);
+//	printf("%f, %f, %f\r\n",outMat2[0][0],outMat2[0][1],outMat2[0][2]);
+//	printf("%f, %f, %f\r\n",outMat2[1][0],outMat2[1][1],outMat2[1][2]);
+//	printf("%f, %f, %f\r\n",outMat2[2][0],outMat2[2][1],outMat2[2][2]);
+
+}
+
+//Matrix Multiply
+void matrix_multiply(float input1[3][3],float input2[3][3]){
+	int i,j,k;
+	float sum=0;
+//    for (i=0;i<3;i++)
+//        for(j=0;j<3;j++)
+//					outMat2[i][j] = 0;
+    for (i=0;i<3;i++){
+        for(j=0;j<3;j++){
+                for(k=0;k<3;k++){
+                sum = sum + input1[i][k] * input2[k][j];
+            } 
+				//printf("%f\r\n",sum);
+				outMat2[i][j] = sum;
+				sum=0;			
+        } 
+    }
+		//			printf("DCM after filter\r\n ");
+//	printf("%f, %f, %f\r\n",outMat2[0][0],outMat2[0][1],outMat2[0][2]);
+//	printf("%f, %f, %f\r\n",outMat2[1][0],outMat2[1][1],outMat2[1][2]);
+//	printf("%f, %f, %f\r\n",outMat2[2][0],outMat2[2][1],outMat2[2][2]);
+		
+
+}
+
+void scalar_multiply(float input[3][3] ,float lambda){
+	int i,j;
+	//float **out=0;
+	for (i=0;i<3;i++){
+        for(j=0;j<3;j++){
+					outMat[i][j] = input[i][j] * lambda;
+          //printf("%f\r\n",outMat[i][j]);
+        } 
+    }
+	
+}
+
+void calculate_p_r_y(){
+	float temp;
+	yaw = atan2(Ra_g[1][0],Ra_g[0][0] )*RADIANS_2_DEGREE;
+	roll = atan2(Ra_g[2][1],Ra_g[2][2])*RADIANS_2_DEGREE;
+	
+	temp = sqrt( pow(Ra_g[2][1],2)+pow(Ra_g[2][2],2));
+	pitch = atan2(-1*Ra_g[2][0],temp)*RADIANS_2_DEGREE;
+	//printf("pitch = %f, roll = %f, yaw = %f\r\n",pitch,roll,yaw);
+}
+
+
 
 
 

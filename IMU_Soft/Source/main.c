@@ -11,9 +11,10 @@
 #include "GPS_decode.h"
 
 extern short  ITG3205_X,ITG3205_Y,ITG3205_Z,ITG3205_T;
-extern float ADXL345_X_AXIS,ADXL345_Y_AXIS;
-//extern float conver_x,conver_y,conver_z;
+//extern float ADXL345_X_AXIS,ADXL345_Y_AXIS;
+extern float conver_x,conver_y,conver_z;
 extern float HMC5883L_ARC;
+extern float pitch,roll,yaw;
 extern nmeaINFO info;
 
 
@@ -42,14 +43,36 @@ extern nmeaINFO info;
 ///*******Test_Module_TYPE == Test_IMU*******/
 void Module_setup(void)
 {
-	 //Open IMU power 
-   Modules_Power_Control(IMU_Blue_Power,1);	
-	 Modules_Power_Control(GPS_Power,1);
-	 //Initializes serial port 2
+
+	u32 total,free;
+	Modules_Power_Control(ALL_Module,1);
+   USART_INIT(115200,3,ENABLE);
+	//serial port 2 initialize, baud rate 9600 ,enable receive interupt (bluebooth)
 	 USART_INIT(9600,2,ENABLE);
-	 //Initializes the IMU all modules
+
+
+	//Initializes the IMU all modules
 	 IMU_INIT(IMU_ALL_IC);
 	GPS_Config();
+	LED_Init();
+	
+	if(SD_Init()!= SD_OK){
+		printf("SD Init failed!\r\n");
+	}
+	else
+		printf("SD Init OK!\r\n");
+	
+   exfuns_init();							//为fatfs相关变量申请内存				 
+   f_mount(fs[0],"0:",1); 					//挂载SD卡 
+
+	if(exf_getfree((u8 *)"0",&total,&free))	//得到SD卡的总容量和剩余容量
+	{
+		printf("SD Card Fatfs Error!\r\n");
+	}	
+	else{
+		printf("SD Total Size:   %d  MB\r\n",total>>10);
+		printf("SD  Free Size:   %d  MB\r\n",free>>10);
+	}
 	
 } 
 void loop(void)
@@ -59,6 +82,9 @@ void loop(void)
 //	  static FRESULT res;
 //    uint8_t AddSDstr[256];
 //	  FIL log_file;	
+		char file_name[20],read_buffer[10];
+	static uint8_t write_num=2,file_num,i;
+	uint8_t AddSDstr[256];
 	
     //IMU sensor data using Bluetooth printing
 	//Get ITG3205 data
@@ -68,27 +94,49 @@ void loop(void)
   //Get HMC5883L data
 	HMC5883L_Read_XYZt();
 	evaluate_rotation_matrix_imu();
-	delay_ms(50);
-	// sprintf((char *)AddSDstr,"\r\nG_X=%5d,G_Y=%5d,G_Z=%5d, Temp=%d  \r\n\
-			A_X=%.4f,A_Y=%.4f,MAG=%.4f\r\n",ITG3205_X,ITG3205_Y,ITG3205_Z,ITG3205_T\
-		 ,ADXL345_X_AXIS,ADXL345_Y_AXIS,HMC5883L_ARC);
-	// Write_SD("gps_data.txt",AddSDstr,102400000);
+	linear_filter();
+	calculate_p_r_y();
+	GPS_Parse_Decode();
 	
-	//get GPS data
-	//	 // The value of "Print_Port" is 3 in the retarget.h (serial 3 printing)
-////	 //Initialize serial port 3 testing
-	 //Modules_Power_Control(Zigbee_Power,1);
-	// USART_INIT(9600,3,ENABLE); 
+//	//creat_file 
+	if(write_num==2){
+		sprintf(file_name,"gps_recv_%d.txt",file_num++);
+		//创建文件 creat file
+		if(SD_Creat_File(file_name))
+			printf("create file success\r\n");
+		else{
+	    printf("create file fail\r\n");
+	    while(1);
+     }  
+   }
+//    //MAX file size is 100K ,file size> max_size create a file again  return write_status ==2	  
+ 
+	 sprintf((char *)AddSDstr,"%d-%d-%d, %d:%d:%d\
+		 Ax = %f,Ay = %f,Az = %f,Gx = %d,Gy = %d,Gz = %d, Latitude = %f, Longitude = %f\r\n ",info.utc.year,info.utc.mon,info.utc.day,info.utc.hour,info.utc.min,info.utc.sec,conver_x,conver_y,conver_z,ITG3205_X,ITG3205_Y,ITG3205_Z,info.lat,info.lon);
+	 write_num=Write_SD(file_name,AddSDstr,102400);
 	
-//	 // The value of "Print_Port" is 2 in the retarget.h (Bluetooth printing)
-//	 //Initialize serial port 2 testing(blue)
-//	 Modules_Power_Control(IMU_Blue_Power,1);
-//	 USART_INIT(9600,2,ENABLE); 	
-	 //GPS power on 
-		 
+	 Read_SD(file_name, (char*)read_buffer, 10*(i++),10);
+		USART_Write_LEN((u8 *)read_buffer,10,3);
+		delay_ms(100);
 
-	//GPS_Parse_Decode();
-}
+ }
+//	// Write_SD("gps_data.txt",AddSDstr,102400000);
+//	
+//	//get GPS data
+//	//	 // The value of "Print_Port" is 3 in the retarget.h (serial 3 printing)
+//////	 //Initialize serial port 3 testing
+//	 //Modules_Power_Control(Zigbee_Power,1);
+//	// USART_INIT(9600,3,ENABLE); 
+//	
+////	 // The value of "Print_Port" is 2 in the retarget.h (Bluetooth printing)
+////	 //Initialize serial port 2 testing(blue)
+////	 Modules_Power_Control(IMU_Blue_Power,1);
+////	 USART_INIT(9600,2,ENABLE); 	
+//	 //GPS power on 
+//		 
+
+//	//GPS_Parse_Decode();
+//}
 ///*******Test_Module_TYPE == Test_IMU END *******/
 
 ///*******Test_Module_TYPE == Test_Blue********/
@@ -129,7 +177,7 @@ void Module_setup_gps(void)
 //	 //GPS power on 
 	 Modules_Power_Control(GPS_Power,1);	 
 //	 //GPS config
-	GPS_Config();;
+	GPS_Config();
 } 
 void loop_gps(void)
 {
@@ -145,10 +193,20 @@ void Module_setup_sd(void)
 	u32 total,free;
 	//open bule power for testing
 //	Modules_Power_Control(Zigbee_Power,1);
-//	 USART_INIT(115200,3,ENABLE); 
+	 USART_INIT(115200,3,ENABLE); 
 //	//open SD power 
 	Modules_Power_Control(SD_Power,1);
+	   Modules_Power_Control(IMU_Blue_Power,1);	
+	 Modules_Power_Control(GPS_Power,1);
+	 //Initializes serial port 2
+	 USART_INIT(9600,2,ENABLE);
+	 //Initializes the IMU all modules
+	 IMU_INIT(IMU_ALL_IC);
+	GPS_Config();
+			printf("Before SDCARD init\r\n");
+
 //	//初始化SD卡 SD initialize
+	
 	if(SD_Init()!= SD_OK){
 		printf("SD Init failed!\r\n");
 	}
@@ -158,7 +216,7 @@ void Module_setup_sd(void)
    exfuns_init();							//为fatfs相关变量申请内存				 
    f_mount(fs[0],"0:",1); 					//挂载SD卡 
 
-	if(exf_getfree("0",&total,&free))	//得到SD卡的总容量和剩余容量
+	if(exf_getfree((u8 *)"0",&total,&free))	//得到SD卡的总容量和剩余容量
 	{
 		printf("SD Card Fatfs Error!\r\n");
 	}	
@@ -171,6 +229,8 @@ void loop_sd(void)
 {
 	char file_name[20],read_buffer[10];
 	static uint8_t write_num=2,file_num,i;
+	uint8_t AddSDstr[256];
+	
 //	//creat_file 
 	if(write_num==2){
 		sprintf(file_name,"gps_recv_%d.txt",file_num++);
@@ -183,11 +243,13 @@ void loop_sd(void)
      }  
    }
 //    //MAX file size is 100K ,file size> max_size create a file again  return write_status ==2	  
-	  write_num=Write_SD(file_name,"hello world I am big girl\r\n",102400);
+	 GPS_Parse_Decode(); 
+	 sprintf((char *)AddSDstr,"\r\nLatitude = %f, Longitude = %f\r\n",info.lat,info.lon);
+	 write_num=Write_SD(file_name,AddSDstr,102400);
 	
-	 // Read_SD(file_name, (char*)read_buffer, 10*(i++),10);
-		USART_Write_LEN(read_buffer,10,3);
-		delay_ms(5000);
+	 Read_SD(file_name, (char*)read_buffer, 10*(i++),10);
+		USART_Write_LEN((u8 *)read_buffer,10,3);
+		delay_ms(100);
 }
 ///*********Test_Module_TYPE == Test_SD END**************/
 
@@ -263,7 +325,52 @@ void loop_sd(void)
 //		Blinks_led_Feq(3,2000);
 //}
 /***********Test_Module_TYPE == Test_all_module END************/
+//TEST IMU
+void Module_setup_imu(void)
+{
+	 //Open IMU power 
+   Modules_Power_Control(IMU_Blue_Power,1);	
+	 Modules_Power_Control(GPS_Power,1);
+	 //Initializes serial port 2
+	 USART_INIT(9600,2,ENABLE);
+	 //Initializes the IMU all modules
+	 IMU_INIT(IMU_ALL_IC);
+	GPS_Config();
+	
+} 
+void loop_imu(void)
+{
+    //IMU sensor data using Bluetooth printing
+	//Get ITG3205 data
+	READ_ITG3205_XYZT();
+  //Get ADXL345 data
+	ADXL345_Read_XYZt();
+  //Get HMC5883L data
+	HMC5883L_Read_XYZt();
+	evaluate_rotation_matrix_imu();
+	linear_filter();
+	delay_ms(50);
+	// sprintf((char *)AddSDstr,"\r\nG_X=%5d,G_Y=%5d,G_Z=%5d, Temp=%d  \r\n\
+			A_X=%.4f,A_Y=%.4f,MAG=%.4f\r\n",ITG3205_X,ITG3205_Y,ITG3205_Z,ITG3205_T\
+		 ,ADXL345_X_AXIS,ADXL345_Y_AXIS,HMC5883L_ARC);
+	// Write_SD("gps_data.txt",AddSDstr,102400000);
+	
+	//get GPS data
+	//	 // The value of "Print_Port" is 3 in the retarget.h (serial 3 printing)
+////	 //Initialize serial port 3 testing
+	 //Modules_Power_Control(Zigbee_Power,1);
+	// USART_INIT(9600,3,ENABLE); 
+	
+//	 // The value of "Print_Port" is 2 in the retarget.h (Bluetooth printing)
+//	 //Initialize serial port 2 testing(blue)
+//	 Modules_Power_Control(IMU_Blue_Power,1);
+//	 USART_INIT(9600,2,ENABLE); 	
+	 //GPS power on 
+		 
 
+	//GPS_Parse_Decode();
+}
+//////////////////
 int main(void)
 {
 	//System initialization
@@ -274,10 +381,12 @@ int main(void)
 	Modules_Power_Control(ALL_Module,DISABLE);
 	//Modules_Power_Control(IMU_Blue_Power,ENABLE);
 	 //Modules_Power_Control(GPS_Power,ENABLE);
+	//Module_setup();
 	Module_setup();
 	while(1)	
 	{ 
 	  loop();
+		
 	}
 }
 
