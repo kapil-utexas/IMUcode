@@ -4,8 +4,8 @@
 #include "i2c.h"
 #include "stdio.h"
 
-//定义ITG3205 内部地址
-#define ITG3205_WHO   0X00  //ID 器件从地址
+//
+#define ITG3205_WHO   0X00  //ID
 #define ITG3205_SMPL  0X15
 #define ITG3205_DLPF  0X16
 #define ITG3205_INT_C  0X17
@@ -20,9 +20,9 @@
 #define ITG3205_GZ_L  0X22
 #define ITG3205_PWR_M  0X3E
 
-#define	ITG3205_Addr   0xD0	  //定义ITG3205器件在IIC总线中的从地址,根据ALT  ADDRESS地址引脚不同修改
+#define	ITG3205_Addr   0xD0	 
 
-//定义 ADXL345 内部地址
+
 #define  ADXL345_ID  0X00
 #define  ADXL345_OFSX  0X1E
 #define  ADXL345_OFSY  0X1F
@@ -53,9 +53,7 @@
 #define  ADXL345_FIFO_CTL   0X38
 #define  ADXL345_FIFO_STATUS    0X39
 
-#define	ADXL345_Addr   0xA6	  //定义ADXL345器件在IIC总线中的从地址
-
-//定义 HMC5883L 内部地址
+#define	ADXL345_Addr   0xA6	  
 
 #define HMC5883L_configA  0x00
 #define HMC5883L_configB  0x01
@@ -73,25 +71,25 @@
 
 
 
-#define	HMC5883L_Addr   0x3C	  //定义ADXL345器件在IIC总线中的从地址
+#define	HMC5883L_Addr   0x3C	  
 
 #define  IMU_ITG3205 1
 #define  IMU_ADXL345 2
 #define  IMU_HMC5883L 3
 #define  IMU_ALL_IC 4
 
-//IMU电源控制函数 status为1表示电源开 status为0表示电源关 
+//IMU
 void IMU_Blue_POWER(uint8_t status);
-//IMU初始化函数
+//IMU
 void IMU_INIT(uint8_t imu_ic);
 
-//ITG3205芯片操作函数  
+//ITG3205
 void READ_ITG3205_XYZT(void);
 
-//ADXL345芯片操作函数 
+//ADXL345
 void ADXL345_Read_XYZt(void);
 
-//HMC5883L芯片操作函数 	
+//HMC5883L
 void HMC5883L_Read_XYZt(void);
 
 void IMU_EvaluateRotationMatrix(float32_t,float32_t,float32_t);

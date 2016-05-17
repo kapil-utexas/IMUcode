@@ -3,9 +3,9 @@
 <title>Static Call Graph - [.\Debug\BlankPrj.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\Debug\BlankPrj.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060061: Last Updated: Thu May 05 16:57:15 2016
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060061: Last Updated: Mon May 16 14:46:04 2016
 <BR><P>
-<H3>Maximum Stack Usage =       1552 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
+<H3>Maximum Stack Usage =       1520 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
 main &rArr; loop &rArr; SD_Creat_File &rArr; f_open &rArr; dir_register &rArr; dir_find &rArr; dir_next &rArr; create_chain &rArr; put_fat &rArr; move_window &rArr; sync_window &rArr; disk_write &rArr; SD_WriteDisk &rArr; SD_WriteBlock &rArr; SD_Init &rArr; SD_EnableWideBusOperation &rArr; SDEnWideBus &rArr; FindSCR &rArr; CmdResp1Error
 <P>
@@ -458,8 +458,8 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[5d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[75]"></a>loop</STRONG> (Thumb, 290 bytes, Stack size 392 bytes, main.o(.text))
-<BR><BR>[Stack]<UL><LI>Max Depth = 1552<LI>Call Chain = loop &rArr; SD_Creat_File &rArr; f_open &rArr; dir_register &rArr; dir_find &rArr; dir_next &rArr; create_chain &rArr; put_fat &rArr; move_window &rArr; sync_window &rArr; disk_write &rArr; SD_WriteDisk &rArr; SD_WriteBlock &rArr; SD_Init &rArr; SD_EnableWideBusOperation &rArr; SDEnWideBus &rArr; FindSCR &rArr; CmdResp1Error
+<P><STRONG><a name="[75]"></a>loop</STRONG> (Thumb, 312 bytes, Stack size 360 bytes, main.o(.text))
+<BR><BR>[Stack]<UL><LI>Max Depth = 1520<LI>Call Chain = loop &rArr; SD_Creat_File &rArr; f_open &rArr; dir_register &rArr; dir_find &rArr; dir_next &rArr; create_chain &rArr; put_fat &rArr; move_window &rArr; sync_window &rArr; disk_write &rArr; SD_WriteDisk &rArr; SD_WriteBlock &rArr; SD_Init &rArr; SD_EnableWideBusOperation &rArr; SDEnWideBus &rArr; FindSCR &rArr; CmdResp1Error
 </UL>
 <BR>[Calls]<UL><LI><a href="#[7a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;linear_filter
 <LI><a href="#[79]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;evaluate_rotation_matrix_imu
@@ -530,7 +530,7 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[5d]"></a>main</STRONG> (Thumb, 30 bytes, Stack size 0 bytes, main.o(.text))
-<BR><BR>[Stack]<UL><LI>Max Depth = 1552<LI>Call Chain = main &rArr; loop &rArr; SD_Creat_File &rArr; f_open &rArr; dir_register &rArr; dir_find &rArr; dir_next &rArr; create_chain &rArr; put_fat &rArr; move_window &rArr; sync_window &rArr; disk_write &rArr; SD_WriteDisk &rArr; SD_WriteBlock &rArr; SD_Init &rArr; SD_EnableWideBusOperation &rArr; SDEnWideBus &rArr; FindSCR &rArr; CmdResp1Error
+<BR><BR>[Stack]<UL><LI>Max Depth = 1520<LI>Call Chain = main &rArr; loop &rArr; SD_Creat_File &rArr; f_open &rArr; dir_register &rArr; dir_find &rArr; dir_next &rArr; create_chain &rArr; put_fat &rArr; move_window &rArr; sync_window &rArr; disk_write &rArr; SD_WriteDisk &rArr; SD_WriteBlock &rArr; SD_Init &rArr; SD_EnableWideBusOperation &rArr; SDEnWideBus &rArr; FindSCR &rArr; CmdResp1Error
 </UL>
 <BR>[Calls]<UL><LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SysTick_Init
 <LI><a href="#[6b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Modules_Power_Control
@@ -1783,7 +1783,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[7c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;GPS_Parse_Decode
 </UL>
 
-<P><STRONG><a name="[7c]"></a>GPS_Parse_Decode</STRONG> (Thumb, 150 bytes, Stack size 16 bytes, gps_decode.o(.text))
+<P><STRONG><a name="[7c]"></a>GPS_Parse_Decode</STRONG> (Thumb, 182 bytes, Stack size 16 bytes, gps_decode.o(.text))
 <BR><BR>[Stack]<UL><LI>Max Depth = 752<LI>Call Chain = GPS_Parse_Decode &rArr; NMEA0183_protocol_analysis &rArr; NMEA_Parse_GPGGA &rArr; nmea_atof &rArr; __hardfp_strtod &rArr; __strtod_int &rArr; _local_sscanf &rArr; _scanf_real
 </UL>
 <BR>[Calls]<UL><LI><a href="#[f6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;NMEA0183_protocol_analysis

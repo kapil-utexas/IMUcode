@@ -1,6 +1,6 @@
 #include "stm32f4xx.h"
 /*-----------board.h-----------------*/
-/* ²âÊÔ³ÌÐò Ö÷Òª°üº¬IMU³ÌÐò ´®¿Ú 1 2 3 */
+/*  */
 
 #include "led.h"
 #include "stdio.h"
@@ -52,7 +52,7 @@ void Module_setup(void)
 
 
 	//Initializes the IMU all modules
-	 IMU_INIT(IMU_ALL_IC);
+	IMU_INIT(IMU_ALL_IC);
 	GPS_Config();
 	LED_Init();
 	
@@ -62,10 +62,10 @@ void Module_setup(void)
 	else
 		printf("SD Init OK!\r\n");
 	
-   exfuns_init();							//ÎªfatfsÏà¹Ø±äÁ¿ÉêÇëÄÚ´æ				 
-   f_mount(fs[0],"0:",1); 					//¹ÒÔØSD¿¨ 
+   exfuns_init();										 
+   f_mount(fs[0],"0:",1); 					 
 
-	if(exf_getfree((u8 *)"0",&total,&free))	//µÃµ½SD¿¨µÄ×ÜÈÝÁ¿ºÍÊ£ÓàÈÝÁ¿
+	if(exf_getfree((u8 *)"0",&total,&free))	
 	{
 		printf("SD Card Fatfs Error!\r\n");
 	}	
@@ -83,7 +83,8 @@ void loop(void)
 //    uint8_t AddSDstr[256];
 //	  FIL log_file;	
 		char file_name[20],read_buffer[10];
-	static uint8_t write_num=2,file_num,i;
+	static uint8_t write_num=2;
+	static uint32_t file_num,i;
 	uint8_t AddSDstr[256];
 	
     //IMU sensor data using Bluetooth printing
@@ -111,8 +112,13 @@ void loop(void)
    }
 //    //MAX file size is 100K ,file size> max_size create a file again  return write_status ==2	  
  
-	 sprintf((char *)AddSDstr,"%d-%d-%d, %d:%d:%d\
-		 Ax = %f,Ay = %f,Az = %f,Gx = %d,Gy = %d,Gz = %d, Latitude = %f, Longitude = %f\r\n ",info.utc.year,info.utc.mon,info.utc.day,info.utc.hour,info.utc.min,info.utc.sec,conver_x,conver_y,conver_z,ITG3205_X,ITG3205_Y,ITG3205_Z,info.lat,info.lon);
+	 //sprintf((char *)AddSDstr,"%d,%d,%d;%f,%f,%f\r\n",ITG3205_X,ITG3205_Y,ITG3205_Z,conver_x,conver_y,conver_z);
+	 sprintf((char *)AddSDstr,"%d-%d-%d, %d:%d:%d; Ax = %f,Ay = %f,Az = %f, "
+		 ,info.utc.year,info.utc.mon,info.utc.day,info.utc.hour, info.utc.min,info.utc.sec,conver_x,conver_y,conver_z);
+
+	 write_num=Write_SD(file_name,AddSDstr,102400);
+
+	 sprintf((char *)AddSDstr,"Gx = %d,Gy = %d,Gz = %d, Latitude = %f, Longitude = %f\r\n ",ITG3205_X,ITG3205_Y,ITG3205_Z,info.lat,info.lon);
 	 write_num=Write_SD(file_name,AddSDstr,102400);
 	
 	 Read_SD(file_name, (char*)read_buffer, 10*(i++),10);
@@ -152,7 +158,7 @@ void loop(void)
 void loop(void)
 {
 	 uint8_t AddSDstr[256],length;
-//	 //½ÓÊÕÀ¶ÑÀ·¢ËÍµÄÊý¾Ý£¬²¢·¢ËÍµ½À¶ÑÀ
+//	
 	 //Receive data from bluetooth 
 	 length = USART_RECV_DATA_LEN(AddSDstr,2);
 	 //send a string to bluetooth
@@ -213,10 +219,10 @@ void Module_setup_sd(void)
 	else
 		printf("SD Init OK!\r\n");
 	
-   exfuns_init();							//ÎªfatfsÏà¹Ø±äÁ¿ÉêÇëÄÚ´æ				 
-   f_mount(fs[0],"0:",1); 					//¹ÒÔØSD¿¨ 
+   exfuns_init();							
+   f_mount(fs[0],"0:",1); 					
 
-	if(exf_getfree((u8 *)"0",&total,&free))	//µÃµ½SD¿¨µÄ×ÜÈÝÁ¿ºÍÊ£ÓàÈÝÁ¿
+	if(exf_getfree((u8 *)"0",&total,&free))
 	{
 		printf("SD Card Fatfs Error!\r\n");
 	}	
@@ -259,17 +265,17 @@ void loop_sd(void)
 //	 u32 total,free;
 //	 //Modules Power Control
 //	 Modules_Power_Control(ALL_Module,1);
-//	 //´®¿ÚÏà¹Ø³ÌÐò serial port 3 initialize, baud rate 115200 ,enable receive interupt	 
+//	serial port 3 initialize, baud rate 115200 ,enable receive interupt	 
 //   USART_INIT(115200,3,ENABLE);
 //	//serial port 2 initialize, baud rate 9600 ,enable receive interupt (bluebooth)
 //	 USART_INIT(9600,2,ENABLE);
-//	 //I2CÏà¹Ø³ÌÐò  IMU all module initialize
+//	 //I2C  IMU all module initialize
 //   IMU_INIT(IMU_ALL_IC);
 //	 //GPS module initialize config 
 // //  GPS_Config();
 //	 //LED initialize
 //	 LED_Init();
-//	 //³õÊ¼»¯SD¿¨ SD initialize
+//	 // SD initialize
 //	 if(SD_Init()!= SD_OK)
 //		 printf("SD Init failed!\r\n");
 //	 else{
@@ -278,9 +284,9 @@ void loop_sd(void)
 //		//´òÓ¡SD¿¨ÐÅÏ¢  SD card capacity 
 //		printf("size:   %u MB ",SDCardInfo.CardCapacity>>20);
 //	 }	
-//    exfuns_init();							//ÎªfatfsÏà¹Ø±äÁ¿ÉêÇëÄÚ´æ				 
-//    f_mount(fs[0],"0:",1); 					//¹ÒÔØSD¿¨
-//		if(exf_getfree("0",&total,&free))	//µÃµ½SD¿¨µÄ×ÜÈÝÁ¿ºÍÊ£ÓàÈÝÁ¿
+//    exfuns_init();							
+//    f_mount(fs[0],"0:",1); 					
+//		if(exf_getfree("0",&total,&free))	
 //		{
 //			printf("SD Card Fatfs Error!\r\n");
 //		}	
@@ -288,9 +294,9 @@ void loop_sd(void)
 //			printf("SD Total Size:   %d  MB\r\n",total>>10);
 //			printf("SD  Free Size:   %d  MB\r\n",free>>10);
 //		}	
-//    //SD´´½¨ÎÄ¼þ		
+//    //SD	
 //	  if(!SD_Creat_File("gps_data.txt"))
-//		    //´´½¨ÎÄ¼þÊ§°Ü D3 2SÉÁË¸ creat file failed ,D3 blinking frequency 2S
+//		    // creat file failed ,D3 blinking frequency 2S
 //        setLED(1, 1);		
 //} 
 
@@ -307,13 +313,13 @@ void loop_sd(void)
 //	  READ_ITG3205_XYZT();	
 //	  ADXL345_Read_XYZt();
 //	  HMC5883L_Read_XYZt();
-//	  //IMU»ñÈ¡Êý¾Ý×ª»»³É×Ö·û´® ·½±ãÐ´ÈëSD¿¨
+//	  //IMU»
 //	  sprintf((char *)AddSDstr,"\r\nITG3205_X=%5d,ITG3205_Y=%5d,ITG3205_Z=%5d, ITG3205_T=%d  \r\n\
 //			ADXL345_X_AXIS=%.4f,ADXL345_Y_AXIS=%.4f,HMC5883L_ARC=%.4f\r\n",ITG3205_X,ITG3205_Y,ITG3205_Z,ITG3205_T\
 //		 ,ADXL345_X_AXIS,ADXL345_Y_AXIS,HMC5883L_ARC);
-//		//´®¿Ú´òÓ¡IMUÊý¾Ý
+//	
 ////		printf("%s",AddSDstr);
-//		//½«IMU»ñÈ¡µÄÊý¾ÝÐ´µ½SD¿¨
+//		
 //		Write_SD("gps_data.txt",AddSDstr,102400000);
 //		  //creat and delete file 
 ////		SD_Creat_File("123.txt");

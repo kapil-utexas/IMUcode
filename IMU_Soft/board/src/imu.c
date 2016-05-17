@@ -3,7 +3,7 @@
 
 #include "imu.h"
 #include "retarget.h"
-/*芯片描述: ITG3205:三轴MEMS陀螺仪 ADXL345:数字加速度计 HMC5883L:数字罗盘
+/*
 **Chip description: ITG3205: triple-axis MEMS gyroscope ADXL345: Digital Accelerometer
 **HMC5883L: 3-Axis Digital Compass IC
 */
@@ -36,42 +36,40 @@ float preRa_g[3][3];
 //初始化ITG3205  ITG3205 Initialize
 void Init_ITG3205(void)
 {	
-  Write_single_reg(ITG3205_Addr,ITG3205_PWR_M,0x00);  //复位设备 上电内地寄存器默认设置
-	Write_single_reg(ITG3205_Addr,ITG3205_SMPL,0x07);  //采样速率 8MS
-	Write_single_reg(ITG3205_Addr,ITG3205_DLPF,0x1E);  //陀螺全面范围正负2000
-	Write_single_reg(ITG3205_Addr,ITG3205_INT_C,0x00);  //中断控制寄存器
-//	Write_single_reg(ITG3205_Addr,ITG3205_PWR_M,0x00);   // XYZ正常检查，使用内部晶振
+  Write_single_reg(ITG3205_Addr,ITG3205_PWR_M,0x00);  
+	Write_single_reg(ITG3205_Addr,ITG3205_SMPL,0x07);  
+	Write_single_reg(ITG3205_Addr,ITG3205_DLPF,0x1E); 
+	Write_single_reg(ITG3205_Addr,ITG3205_INT_C,0x00);  
+//	Write_single_reg(ITG3205_Addr,ITG3205_PWR_M,0x00);  
 }
  
-//获取ITG3205 X Y Z轴及温度数据 Get ITG3205 X Y Z axis and temperature data
+//Get ITG3205 X Y Z axis and temperature data
 void READ_ITG3205_XYZT(void)
 {
 	uint8_t  data_l,data_h;
 	//ITG3205 slave address
   data_l = Read_single_reg(ITG3205_Addr,ITG3205_WHO);
 //	printf("ITG3205_Addr:%d\r\n ",data_l);
-	//获取ITG3205 X轴   ITG3205 X_axle
 	data_l = Read_single_reg(ITG3205_Addr,ITG3205_GX_L);
   data_h = Read_single_reg(ITG3205_Addr,ITG3205_GX_H);
 //	printf("ITG3205_XL:%d ,ITG3205_XH:%d \r\n ",data_l,data_h);
 	ITG3205_X = (data_h<<8)|data_l;
 	ITG3205_X /= 14.375;
 	if(ITG3205_X<0)  ITG3205_X = ITG3205_X;
-	//获取ITG3205 Y轴  ITG3205 Y_axle
 	data_l = Read_single_reg(ITG3205_Addr,ITG3205_GY_L);
   data_h = Read_single_reg(ITG3205_Addr,ITG3205_GY_H);
 //	printf("ITG3205_YL:%d ,ITG3205_YH:%d \r\n ",data_l,data_h);
 	ITG3205_Y = (data_h<<8)|data_l;
 	ITG3205_Y /= 14.375;
 	if(ITG3205_Y<0)  ITG3205_Y = ITG3205_Y;
-	//获取ITG3205 Z轴  ITG3205 Z_axle
+	
 	data_l = Read_single_reg(ITG3205_Addr,ITG3205_GZ_L);
   data_h = Read_single_reg(ITG3205_Addr,ITG3205_GZ_H);
 //	printf("ITG3205_ZL:%d ,ITG3205_ZH:%d \r\n ",data_l,data_h);
 	ITG3205_Z = (data_h<<8)|data_l;
 	ITG3205_Z /= 14.375;
 	if(ITG3205_Z<0)  ITG3205_Z = ITG3205_Z;
-	//获取ITG3205 温度  ITG3205 temperature
+	
 	data_l = Read_single_reg(ITG3205_Addr,ITG3205_TMP_L);
   data_h = Read_single_reg(ITG3205_Addr,ITG3205_TMP_H);
 //	printf("ITG3205_TEMPL:%d ,ITG3205_TEMPH:%d \r\n ",data_l,data_h);
@@ -91,14 +89,14 @@ void Init_ADXL345(void)
 {
   Write_single_reg(ADXL345_Addr,ADXL345_DATA_FORMAT,0x0B);  //setting the range, here it is set at +-16g with 0x0B
 	Write_single_reg(ADXL345_Addr,ADXL345_BW_RATE,0x08);  //12.5Hz with 0x08,set up the data rate or sampling frequency
-	Write_single_reg(ADXL345_Addr,ADXL345_POWER,0x08);  //选择电源模式
-	Write_single_reg(ADXL345_Addr,ADXL345_INT_EN,0x80);  //使能DATA_READY中断
-	Write_single_reg(ADXL345_Addr,ADXL345_OFSX,0x00);   // X偏移量
-	Write_single_reg(ADXL345_Addr,ADXL345_OFSY,0x00);   // Y偏移量
-	Write_single_reg(ADXL345_Addr,ADXL345_OFSZ,0x05);   // Z偏移量
+	Write_single_reg(ADXL345_Addr,ADXL345_POWER,0x08);  
+	Write_single_reg(ADXL345_Addr,ADXL345_INT_EN,0x80);  
+	Write_single_reg(ADXL345_Addr,ADXL345_OFSX,0x00);  
+	Write_single_reg(ADXL345_Addr,ADXL345_OFSY,0x00);  
+	Write_single_reg(ADXL345_Addr,ADXL345_OFSZ,0x05);  
 }
 
-//获取ADXL345数据信息 Get ADXL345 data information
+//Get ADXL345 data information
 void ADXL345_Read_XYZt(void)
 {
   uint8_t  data_l,data_h;
@@ -107,21 +105,19 @@ void ADXL345_Read_XYZt(void)
   data_l = Read_single_reg(ADXL345_Addr,ADXL345_ID);
 //	printf("ADXL345_Addr:%d\r\n ",data_l);
 	
-	//获取ADXL345 X轴 ADXL345 X_axle
+	
 	data_l = Read_single_reg(ADXL345_Addr,ADXL345_DATA_X0);
   data_h = Read_single_reg(ADXL345_Addr,ADXL345_DATA_X1);
 //	printf("ADXL345_XL:%d ,ADXL345_XH:%d \r\n ",data_l,data_h);
 	//sgnX = 0x8000 & data_h;
 	ADXL345_X = ((data_h<<8)|data_l);
 	
-	//获取ADXL345 Y轴  ADXL345 Y_axle
 	data_l = Read_single_reg(ADXL345_Addr,ADXL345_DATA_Y0);
   data_h = Read_single_reg(ADXL345_Addr,ADXL345_DATA_Y1);
 //	printf("ADXL345_YL:%d ,ADXL345_YH:%d \r\n ",data_l,data_h);
 	//sgnY = 0x8000 & data_h;
 	ADXL345_Y = ((data_h<<8)|data_l);
 	
-	//获取ADXL345 Z轴  ADXL345 Z_axle
 	data_l = Read_single_reg(ADXL345_Addr,ADXL345_DATA_Z0);
   data_h = Read_single_reg(ADXL345_Addr,ADXL345_DATA_Z1);
 //	printf("ADXL345_ZL:%d ,ADXL345_ZH:%d \r\n ",data_l,data_h);
@@ -130,7 +126,6 @@ void ADXL345_Read_XYZt(void)
 	ADXL345_Z = ((data_h<<8)|data_l);
 //	printf("ADXL345_X:%x,ADXL345_Y:%x,ADXL345_Z:%x\r\n ",ADXL345_X,ADXL345_Y,ADXL345_Z);
   
-	//分别是加速度X,Y,Z的原始数据，10位的
 //	conver_x=(float)ADXL345_X*4; //3.9 to 4
 		conver_x=(float)ADXL345_X*3.9; //3.9 to 4
 		conver_y=(float)ADXL345_Y*3.9; //3.9 to 4
@@ -148,8 +143,8 @@ void ADXL345_Read_XYZt(void)
 
 temp = sqrt( pow(conver_x,2)+pow(conver_y,2)+pow(conver_z,2));
 	printf("Ax:%f,Ay:%f,Az:%f,Norm:%f\r\n",conver_x,conver_y,conver_z,temp);//Actual Accel VAlues
-// ADXL345_X_AXIS=(float)(((atan2(conver_z,conver_x)*180)/3.14159265)+180);    //X轴角度值
-  //ADXL345_Y_AXIS=(float)(((atan2(conver_z,conver_y)*180)/3.14159265)+180);  //Y轴角度值
+// ADXL345_X_AXIS=(float)(((atan2(conver_z,conver_x)*180)/3.14159265)+180);    
+  //ADXL345_Y_AXIS=(float)(((atan2(conver_z,conver_y)*180)/3.14159265)+180); 
 //  printf("ADXL345_X_AXIS:%f,ADXL345_Y_AXIS:%f\r\n ",ADXL345_X_AXIS,ADXL345_Y_AXIS);
 }	
 
@@ -162,11 +157,10 @@ temp = sqrt( pow(conver_x,2)+pow(conver_y,2)+pow(conver_z,2));
 //初始化HMC5883L  HMC5883L initialize
 void Init_HMC5883L(void)
 {
-  Write_single_reg(HMC5883L_Addr,HMC5883L_configA,0x14);  //配置寄存器A
-	Write_single_reg(HMC5883L_Addr,HMC5883L_MODE,0x00);  //模式寄存器	
+  Write_single_reg(HMC5883L_Addr,HMC5883L_configA,0x14);  
+	Write_single_reg(HMC5883L_Addr,HMC5883L_MODE,0x00);  
 }
 
-//获取HMC5883L XYZ数据
 void HMC5883L_Read_XYZt(void)
 {
   uint8_t  data_l,data_h;
@@ -178,13 +172,11 @@ void HMC5883L_Read_XYZt(void)
 	//	printf("HMC5883L_XL:%d ,HMC5883L_XH:%d \r\n ",data_l,data_h);
 	HMC5883L_X = (data_h<<8)|data_l; 
 	
-	//获取ITG3205 Y轴  Y_axle
 	data_l = Read_single_reg(HMC5883L_Addr,HMC5883L_YL);
 	data_h = Read_single_reg(HMC5883L_Addr,HMC5883L_YH);
 	//	printf("HMC5883L_YL:%d ,HMC5883L_YH:%d \r\n ",data_l,data_h);
 	HMC5883L_Y = (data_h<<8)|data_l;
 	
-	//获取ITG3205 Z轴  Z_axle
 	data_l = Read_single_reg(HMC5883L_Addr,HMC5883L_ZL);
 	data_h = Read_single_reg(HMC5883L_Addr,HMC5883L_ZH);
 //	printf("HMC5883L_ZL:%d ,HMC5883L_ZL:%d \r\n ",data_l,data_h);
@@ -194,7 +186,6 @@ void HMC5883L_Read_XYZt(void)
 	if(HMC5883L_X>0x7fff) HMC5883L_X-=0xffff;	
 	if(HMC5883L_Y>0x7fff) HMC5883L_Y-=0xffff;
 	if(HMC5883L_Z>0x7fff) HMC5883L_Z-=0xffff;	
-	//HMC5883L获取的角度值  HMC5883L Angle value
 	
   HMC5883L_ARC=atan2(HMC5883L_Y,HMC5883L_X)*(180/3.14159265);    //Heading in degrees
   HMC5883L_ARC -= 4.033; // subtracting magnetic declination

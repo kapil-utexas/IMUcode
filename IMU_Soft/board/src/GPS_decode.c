@@ -841,7 +841,7 @@ void GPS_Parse_Decode(void)
 			 
 			 printf("\r\nTime:%d-%d-%d %d:%d:%d",info.utc.year,info.utc.mon,info.utc.day,info.utc.hour,info.utc.min,info.utc.sec);
 			// printf("lon = %f, lat = %f,info.HDOP:%f\r\n ",info.lon,info.lat,info.HDOP);
-			 printf("lon = %f, lat = %f \r\n ",info.lon,info.lat); 
+			 printf(" lon = %f, lat = %f \r\n ",info.lon,info.lat); 
 		
 
 			 //printf("info.speed:%f,info.direction:%f,info.declination:%f\r\n ",info.speed,info.direction,info.declination);
@@ -854,10 +854,10 @@ void GPS_Parse_Decode(void)
 //	   USART_Write_LEN(gps_recv_buff,HALF_GPS_RBUFF_SIZE,3);
 		 // NMEA0183 protocol analysis
 		 if(NMEA0183_protocol_analysis(gps_recv_buff,HALF_GPS_RBUFF_SIZE,&info)){		
-//		   printf("Time:%d-%d-%d %d:%d:%d",info.utc.year,info.utc.mon,info.utc.day,info.utc.hour,info.utc.min,info.utc.sec);
+		   printf("Time:%d-%d-%d %d:%d:%d",info.utc.year,info.utc.mon,info.utc.day,info.utc.hour,info.utc.min,info.utc.sec);
 //			 printf("info.lon:%f,info.lat:%f,info.HDOP:%f\r\n ",info.lon,info.lat,info.HDOP); 
 //			 printf("info.speed:%f,info.direction:%f,info.declination:%f\r\n ",info.speed,info.direction,info.declination); 
-			 printf("lon = %f, lat = %f \r\n ",info.lon,info.lat);
+			 printf(" lon = %f, lat = %f \r\n ",info.lon,info.lat);
  	
 		 }
 	   GPS_HalfTransferEnd = 0x00;
